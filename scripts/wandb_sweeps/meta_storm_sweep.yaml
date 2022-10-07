@@ -1,0 +1,44 @@
+program: main.py
+name: cifar10-fastrd-sweep
+project: VR_cifar10
+entity: fastr
+description: First sweep of lr, wd, a0, b0, etc. of fastrd or fastrn.
+method: bayes
+metric:
+  goal: minimize
+  name: test/accuracy
+command:
+    - ${env}
+    - ${interpreter}
+    - ${program}
+    - ${args}
+    - "--wandb"
+parameters:
+  optimizer:
+    values: [fastrd, fastrn]
+  storm_a_0:  # this seems to be important
+    distribution: 'log_uniform_values'
+    min: 1e1
+    max: 1e9
+  storm_b_0:
+    distribution: 'log_uniform_values'
+    min: 1e-9
+    max: 1e1
+  seed:
+    values: [0, 1, 2, 3, 4, 5]
+  weight_decay:
+    value: 0
+  lr:
+    distribution: 'log_uniform_values'
+    min: 1e-1
+    max: 15
+  batch_size:
+    distribution: 'q_log_uniform_values'
+    q: 8
+    min: 32
+    max: 256
+  storm_p:
+    distribution: 'uniform'
+    min: 0.1772
+    max: 0.51
+

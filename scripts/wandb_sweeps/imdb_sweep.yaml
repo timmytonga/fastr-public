@@ -1,0 +1,32 @@
+program: main.py
+name: imdb-sweep
+project: VR_imdb
+entity: fastr
+description: Grid search with prechosen values
+method: random
+metric:
+  goal: minimize
+  name: test/avg_loss
+command:
+    - ${env}
+    - ${interpreter}
+    - ${program}
+    - ${args}
+    - "--wandb"
+    - "--dataset"
+    - "imdb"
+parameters:
+  optimizer:
+    values: ['fastrn', 'fastrd']
+  storm_a_0:  # this seems to be important
+    values: [1e5, 1e6, 1e7, 1e8, 3e8, 1e9]
+  storm_b_0:
+    values: [1e-8]
+  weight_decay:
+    value: 0
+  lr:
+    values: [1e-4, 1e-3, 1e-2, 1e-1, 1, 2, 4, 8]
+  batch_size:
+    value: 16
+  storm_p:
+    values: [0.2, 0.25, 0.333, 0.35]

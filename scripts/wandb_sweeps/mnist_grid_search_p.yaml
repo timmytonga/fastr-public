@@ -1,0 +1,28 @@
+program: main.py
+name: mnist-p-fastrn-grid-search
+project: VR_mnist
+entity: fastr
+description: Grid search with prechosen values
+method: grid
+metric:
+  goal: minimize
+  name: test/accuracy
+command:
+    - ${env}
+    - ${interpreter}
+    - ${program}
+    - ${args}
+    - "--wandb"
+    - "--dataset=mnist"
+parameters:
+  storm_p:
+    values: [0.2, 0.25, 0.333, 0.35, 0.4, 0.45, 0.5]
+  lr:
+    values: [1e-2, 1e-1, 1, 2, 5]
+  optimizer:
+    values: [fastrn, fastrd]
+  storm_a_0:  # this seems to be important
+    value: 1e8
+  storm_b_0:
+    value: 1e-8
+ 

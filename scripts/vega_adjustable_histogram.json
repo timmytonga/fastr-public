@@ -1,0 +1,134 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "An interactive histogram for visualizing a univariate distribution.",
+  "title": "${field:title}",
+  "width": 500,
+  "height": 100,
+  "padding": 5,
+
+  "signals": [
+    { "name": "binOffset", "value": 0},
+    { "name": "xMin", "value": 0,
+      "bind": {"input": "range", "min": 1, "max": 100, "step": 1} },
+    { "name": "xMax", "value": 100,
+      "bind": {"input": "range", "min": 50, "max": 5000, "step": 10} },
+
+    { "name": "binStep", "value": 10,
+      "bind": {"input": "range", "min": 1, "max": 100, "step": 1} }  ],
+
+  "data": [
+    {
+      "name": "wandb"
+    },
+    {
+      "name": "binned",
+      "source": "wandb",
+      "transform": [
+        {
+          "type": "extent", "field": "${field:value}",
+          "signal": "extent"
+        },
+        {
+          "type": "bin", "field": "${field:value}",
+          "extent": [{"signal": "xMin"}, {"signal": "xMax"}],
+          "anchor": {"signal": "binOffset"},
+          "step": {"signal": "binStep"},
+          "nice": true,
+          "as": ["bin0", "bin1"]
+        }
+      ]
+    }, {
+      "name": "counts",
+      "source": "binned",
+      "transform": [
+        {
+          "type": "aggregate",
+          "key": "bin0", "groupby": ["bin0", "bin1"],
+          "fields": ["bin0"], "ops": ["count"], "as": ["count"]
+        }
+      ]
+    }, {
+      "name": "overflow",
+      "source": "binned",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "datum['bin0'] >= xMax"
+        },{
+          "type": "extent", "field": "${field:value}",
+          "signal": "overflowExtent"
+        },
+        {
+          "type": "aggregate"
+        }
+      ]
+    }
+  ],
+
+  "scales": [
+    {
+      "name": "xscale",
+      "type": "linear",
+      "range": "width",
+      "domain":[{"signal": "xMin"}, {"signal": "xMax"}],
+      "zero": false
+    },
+    {
+      "name": "yscale",
+      "type": "linear",
+      "range": "height", "round": true,
+      "domain": {"data": "counts", "field": "count"},
+      "zero": true, "nice": true
+    }
+  ],
+
+  "axes": [
+    {"orient": "bottom", "scale": "xscale", "zindex": 1, "title": "Grad Norms"},
+    {"orient": "left", "scale": "yscale", "zindex": 1, "title": "Count"}
+  ],
+
+  "marks": [
+    {
+      "type": "rect",
+      "from": {"data": "counts"},
+      "encode": {
+        "update": {
+          "x": {"scale": "xscale", "field": "bin0"},
+          "x2": {"scale": "xscale", "field": "bin1",
+                "offset": {"signal": "binStep > 0.02 ? -0.5 : 0"}},
+          "y": {"scale": "yscale", "field": "count"},
+          "y2": {"scale": "yscale", "value": 0},
+          "fillOpacity": {"value": 0.6},
+          "fill": {"value": "steelblue"},
+          "tooltip": {
+            "signal": "{'Count': datum.count, 'Interval': [datum.bin0, datum.bin1]}"
+            }
+        },
+        "hover": { "fill": {"value": "firebrick"} }
+      }
+    },
+    {
+      "type": "text",
+      "from": {"data": "overflow"},
+      "encode": {
+        "enter": {
+          "fill": {"value": "#000"},
+          "text": {
+            "signal": "'Overflow Count:' + datum.count +' (Hover Over)'"
+            },
+          "x": {"value": 350},
+          "align": {"value": "right"}
+        },
+        "update": {
+          "fill": {"value": "#000"},
+          "text": {
+            "signal": "'Overflow Count: '+ datum.count + ' ('+ format(datum.count/length(data('wandb')), '.3f') + '%). ' + 'Range=[' + format(overflowExtent[0], '.2f') + ', ' + format(overflowExtent[1], '.2f') + ']' "
+            },
+           "tooltip": {
+            "signal": "{'Count': datum.count, 'Min': format(overflowExtent[0], '.2f'), 'Max': format(overflowExtent[1], '.2f')}"
+            }
+        }
+      }
+    }
+  ]
+}
